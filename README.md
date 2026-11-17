@@ -34,21 +34,135 @@ stations, with role-based access, tamper-evident statements and a full audit tra
 
 The Super Administrator **cannot** read case content. This is deliberate.
 
-## Local development
+## Project setup (local development)
+
+These steps set up a copy of the system on your own computer for development, testing or training. For a live server, see [Production deployment](#production-deployment-summary).
+
+### Prerequisites
+
+| Requirement | Version | Check with |
+|---|---|---|
+| Python | 3.12 or 3.13 | `python --version` |
+| Git | any recent | `git --version` |
+| A modern browser | Chrome, Edge or Firefox | |
+
+PostgreSQL is **not** needed for local development; the system uses a SQLite file automatically.
+
+### 1. Get the code
 
 ```bash
+git clone https://github.com/Ralarbi011/police-statement-system.git
+cd police-statement-system
+```
+
+### 2. Create and activate a virtual environment
+
+**Windows (PowerShell):**
+```powershell
 python -m venv .venv
-.venv\Scripts\activate            # Windows
+.\.venv\Scripts\Activate.ps1
+```
+If PowerShell says *"running scripts is disabled"*, run this once, then activate again:
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+**Linux / macOS:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+You should now see `(.venv)` at the start of the terminal prompt. Activate the environment again every time you open a new terminal.
+
+### 3. Install the dependencies
+
+```bash
 pip install -r requirements.txt
-copy .env.example .env            # then set DEBUG=True and a SECRET_KEY
+```
+
+### 4. Create the `.env` configuration file
+
+Generate a secret key:
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(50))"
+```
+
+Create a file named `.env` in the project folder (next to `manage.py`) containing:
+```ini
+DEBUG=True
+SECRET_KEY=paste-the-generated-key-here
+ALLOWED_HOSTS=localhost,127.0.0.1
+```
+
+`.env` is ignored by git. Never commit it. (`.env.example` lists every available setting; it is set up for production, so don't copy it unchanged for local use.)
+
+### 5. Create the database
+
+```bash
 python manage.py migrate
-python manage.py seed_demo --password "Choose-A-Demo-Pass"   # demo station + one user per role
+```
+
+### 6. Create demo accounts (optional, development only)
+
+```bash
+python manage.py seed_demo --password "Choose-A-Demo-Pass"
+```
+
+This creates a **Demo Police Station** and one account per role, all with the password you chose. It refuses to run when `DEBUG` is off.
+
+| Username | Role |
+|---|---|
+| `admin` | Super Administrator |
+| `commander` | Station Commander |
+| `investigator` | Investigator |
+| `frontdesk` | Front Desk / Charge Office |
+| `auditor` | Auditor / Prosecutor (read-only) |
+
+To create your own Super Administrator instead, run `python manage.py create_superadmin <username>`.
+
+### 7. Run the development server
+
+```bash
 python manage.py runserver
 ```
 
-Open http://127.0.0.1:8000. The demo usernames are `admin`, `commander`, `investigator`, `frontdesk` and `auditor`.
+| Who | Sign in at |
+|---|---|
+| Officers (Commander, Investigator, Front Desk, Auditor) | http://127.0.0.1:8000/accounts/login/ |
+| Super Administrator | http://127.0.0.1:8000/system-admin/ |
 
-Run the tests with `python manage.py test`.
+Press **Ctrl + C** in the terminal to stop the server. If port 8000 is busy, use `python manage.py runserver 8001`.
+
+### 8. Run the tests
+
+```bash
+python manage.py test           # all 21 tests
+python manage.py test -v 2      # with the name of each test
+python manage.py check          # Django configuration check
+```
+
+### Common setup problems
+
+| Problem | Solution |
+|---|---|
+| `ImproperlyConfigured: Environment variable SECRET_KEY is required` | `.env` is missing or not in the project folder, or `DEBUG` is not `True`. Repeat step 4. |
+| `No module named 'django'` | The virtual environment is not active. Repeat the activate command in step 2. |
+| Officer login says *"…correct username and password for a staff account"* | You are on the administrator page. Officers sign in at `/accounts/login/`. |
+| *"Account temporarily locked"* | Too many failed sign-ins. Run `python manage.py axes_reset`. |
+| *"CSRF verification failed"* | The page was left open while signing in/out in another tab. Refresh (F5) and try again. |
+| You want to start again with an empty database | Stop the server, then run `python manage.py flush`, followed by step 6. |
+
+### Project structure
+
+```
+accounts/    users, roles, stations, sign-in, management commands
+records/     people, cases, statements, attachments, access rules, officer screens, tests
+audit/       append-only audit log and sign-in logging
+config/      settings and URL configuration
+templates/   HTML pages
+static/      CSS, JavaScript (signature pad) and locally hosted Bootstrap
+```
 
 ## Production deployment (summary)
 
