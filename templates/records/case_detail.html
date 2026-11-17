@@ -1,0 +1,100 @@
+{% extends "base.html" %}{% load records_tags %}
+{% block title %}{{ case.case_number }} · {{ SYSTEM_NAME }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+  <div>
+    <div class="text-muted small">{{ case.station }}</div>
+    <h1 class="h3 mb-1">{{ case.case_number }} <span class="badge text-bg-{{ case.status|status_class }} fs-6 align-middle">{{ case.get_status_display }}</span></h1>
+    <div class="fs-5">{{ case.title }}</div>
+  </div>
+  {% if can_edit %}<a class="btn btn-outline-primary" href="{% url 'case_edit' case.pk %}">Edit case details</a>{% endif %}
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card p-3 mb-4">
+      <dl class="row mb-0">
+        <dt class="col-sm-3">Offence</dt><dd class="col-sm-9">{{ case.offence }}</dd>
+        <dt class="col-sm-3">Occurred</dt><dd class="col-sm-9">{{ case.occurred_at|date:"d M Y H:i"|default:"Not known" }}</dd>
+        <dt class="col-sm-3">Location</dt><dd class="col-sm-9">{{ case.location|default:"—" }}</dd>
+        <dt class="col-sm-3">Reported</dt><dd class="col-sm-9">{{ case.created_at|date:"d M Y H:i" }} to {{ case.reporting_officer }}</dd>
+        <dt class="col-sm-3">Investigator</dt><dd class="col-sm-9">{{ case.assigned_to|default:"Not yet assigned" }}</dd>
+        <dt class="col-sm-3">Summary</dt><dd class="col-sm-9">{{ case.description|linebreaksbr }}</dd>
+        {% if case.is_closed %}<dt class="col-sm-3">Closed</dt><dd class="col-sm-9">{{ case.closed_at|date:"d M Y" }} – {{ case.closure_reason }}</dd>{% endif %}
+      </dl>
+    </div>
+
+    <div class="card p-3 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h5 mb-0">People involved</h2>
+        {% if can_record %}<a class="btn btn-sm btn-primary" href="{% url 'case_add_party' case.pk %}">+ Add person</a>{% endif %}
+      </div>
+      <div class="table-responsive"><table class="table table-sm mb-0">
+        <thead><tr><th>Name</th><th>Role</th><th>Phone</th><th></th></tr></thead>
+        <tbody>{% for p in parties %}
+          <tr><td><a href="{{ p.person.get_absolute_url }}">{{ p.person.full_name }}</a></td>
+          <td>{{ p.get_role_display }}</td><td>{{ p.person.phone|default:"—" }}</td>
+          <td class="text-end">{% if can_record %}<a class="btn btn-sm btn-outline-success" href="{% url 'statement_create' case.pk %}?party={{ p.pk }}">Take statement</a>{% endif %}</td></tr>
+        {% empty %}<tr><td colspan="4" class="text-muted">No one added yet. Add the complainant first.</td></tr>{% endfor %}</tbody>
+      </table></div>
+    </div>
+
+    <div class="card p-3 mb-4">
+      <h2 class="h5">Statements</h2>
+      <div class="table-responsive"><table class="table table-sm mb-0">
+        <thead><tr><th>Ref.</th><th>Person</th><th>Type</th><th>Recorded</th><th>By</th><th>Status</th></tr></thead>
+        <tbody>{% for st in statements %}
+          <tr><td><a href="{{ st.get_absolute_url }}">{{ st.reference }}</a>{% if st.parent_id %} <span class="badge text-bg-info">additional</span>{% endif %}</td>
+          <td>{{ st.person.full_name }}</td><td>{{ st.get_statement_type_display }}</td>
+          <td>{{ st.started_at|date:"d M Y H:i" }}</td><td>{{ st.recorded_by.display_name }}</td>
+          <td><span class="badge text-bg-{{ st.status|status_class }}">{{ st.get_status_display }}</span></td></tr>
+        {% empty %}<tr><td colspan="6" class="text-muted">No statements yet.</td></tr>{% endfor %}</tbody>
+      </table></div>
+    </div>
+
+    <div class="card p-3 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h5 mb-0">Attachments &amp; recordings</h2>
+        {% if can_attach %}<a class="btn btn-sm btn-outline-primary" href="{% url 'attachment_upload' case.pk %}">+ Upload</a>{% endif %}
+      </div>
+      <div class="table-responsive"><table class="table table-sm mb-0">
+        <thead><tr><th>File</th><th>Type</th><th>Description</th><th>Uploaded</th></tr></thead>
+        <tbody>{% for a in attachments %}
+          <tr><td><a href="{% url 'attachment_download' a.pk %}">{{ a.original_name }}</a><div class="text-muted" style="font-size:.7rem">SHA-256 {{ a.sha256|truncatechars:20 }}</div></td>
+          <td>{{ a.get_kind_display }}</td><td>{{ a.description }}{% if a.statement %} ({{ a.statement.reference }}){% endif %}</td>
+          <td>{{ a.uploaded_at|date:"d M Y" }} · {{ a.uploaded_by.display_name }}</td></tr>
+        {% empty %}<tr><td colspan="4" class="text-muted">None.</td></tr>{% endfor %}</tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    {% if can_assign %}
+    <div class="card p-3 mb-4"><h2 class="h6">Assign investigator</h2>
+      <form method="post" action="{% url 'case_assign' case.pk %}">{% csrf_token %}
+        {{ assign_form.assigned_to }}<button class="btn btn-sm btn-primary mt-2">Assign</button>
+      </form>
+    </div>
+    {% endif %}
+    {% if status_form %}
+    <div class="card p-3 mb-4"><h2 class="h6">Change status</h2>
+      <form method="post" action="{% url 'case_status' case.pk %}">{% csrf_token %}
+        {{ status_form.status }}
+        <textarea name="reason" rows="2" class="form-control mt-2" placeholder="Reason / remarks (required to close)"></textarea>
+        <button class="btn btn-sm btn-warning mt-2">Update status</button>
+      </form>
+    </div>
+    {% endif %}
+    <div class="card p-3"><h2 class="h6">Investigation diary</h2>
+      {% if can_note %}
+      <form method="post" action="{% url 'case_add_note' case.pk %}" class="mb-3">{% csrf_token %}
+        {{ note_form.text }}<button class="btn btn-sm btn-outline-primary mt-2">Add entry</button>
+      </form>
+      {% endif %}
+      {% for n in notes %}
+        <div class="border-start border-3 ps-2 mb-2 small"><div class="text-muted">{{ n.created_at|date:"d M Y H:i" }} · {{ n.author.display_name }}</div>{{ n.text|linebreaksbr }}</div>
+      {% empty %}<p class="text-muted small mb-0">No entries yet.</p>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

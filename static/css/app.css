@@ -1,0 +1,18 @@
+:root { --app-navy: #14284b; }
+.app-nav { background: var(--app-navy); }
+.card { border: 0; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.stat-card .display-6 { font-weight: 600; }
+.statement-body { font-family: Georgia, "Times New Roman", serif; font-size: 1.05rem; line-height: 1.6; }
+.statement-text { white-space: pre-wrap; font-family: Georgia, "Times New Roman", serif; font-size: 1.05rem; line-height: 1.7; }
+.sig-pad-wrap { border: 2px dashed #9aa5b5; border-radius: .5rem; background: #fff; touch-action: none; }
+.sig-pad-wrap canvas { width: 100%; height: 180px; display: block; cursor: crosshair; }
+.sig-pad-wrap.signed { border-style: solid; border-color: #198754; }
+.sig-img { max-height: 90px; max-width: 100%; background: #fff; }
+.table td, .table th { vertical-align: middle; }
+.lock-banner { border-left: 6px solid #198754; }
+.draft-banner { border-left: 6px solid #ffc107; }
+
+@media print {
+  .no-print, nav, footer, .btn, .alert { display: none !important; }
+  body { background: #fff !important; }
+}

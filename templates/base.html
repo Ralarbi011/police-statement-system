@@ -1,0 +1,54 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ SYSTEM_NAME }}{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body class="bg-body-tertiary">
+{% if user.is_authenticated %}
+<nav class="navbar navbar-expand-lg navbar-dark app-nav mb-4">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-semibold" href="{% url 'dashboard' %}">{{ SYSTEM_NAME }}</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-label="Menu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav me-auto">
+        {% if user.is_system_admin %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'admin:index' %}">Administration</a></li>
+        {% else %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'case_list' %}">Cases</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'person_list' %}">People</a></li>
+        {% endif %}
+      </ul>
+      <span class="navbar-text small me-3">
+        {{ user.display_name }} · {{ user.get_role_display }}{% if user.station %} · {{ user.station.code }}{% endif %}
+      </span>
+      <a class="btn btn-sm btn-outline-light me-2" href="{% url 'password_change' %}">Password</a>
+      <form method="post" action="{% url 'logout' %}" class="d-inline">{% csrf_token %}
+        <button class="btn btn-sm btn-light">Log out</button>
+      </form>
+    </div>
+  </div>
+</nav>
+{% endif %}
+<main class="container-xl pb-5">
+  {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
+      {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="text-center text-muted small pb-3 no-print">
+  Restricted system. All activity is recorded. Unauthorised access is an offence.
+</footer>
+<script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-xl-9"><div class="card p-4">
+  <div class="text-muted small">{{ case.case_number }} · {{ case.title }}</div>
+  <h1 class="h4 mb-1">{% if st %}Edit draft {{ st.reference }}{% elif parent %}Additional statement{% else %}New statement{% endif %}</h1>
+  <p class="mb-3">Person: <strong>{{ person.full_name }}</strong>{% if parent %} · adds to / corrects <a href="{{ parent.get_absolute_url }}">{{ parent.reference }}</a>{% endif %}</p>
+
+  <div class="alert alert-warning small" id="caution-box">
+    <strong>Caution (read to suspects/accused before recording):</strong><br>“{{ caution_text }}”
+  </div>
+
+  <form method="post" novalidate>{% csrf_token %}
+    {% include "includes/form_fields.html" %}
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary">Save draft</button>
+      <a class="btn btn-link" href="{% if st %}{{ st.get_absolute_url }}{% else %}{{ case.get_absolute_url }}{% endif %}">Cancel</a>
+    </div>
+    <p class="small text-muted mt-3 mb-0">A draft can be corrected until it is signed. After signing it is locked permanently; any later correction must be an additional statement.</p>
+  </form>
+</div></div></div>
+{% endblock %}

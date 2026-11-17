@@ -1,0 +1,70 @@
+{% extends "base.html" %}{% load records_tags %}
+{% block title %}{{ st.reference }} · {{ SYSTEM_NAME }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+  <div>
+    <div class="text-muted small"><a href="{{ st.case.get_absolute_url }}">{{ st.case.case_number }}</a> · {{ st.case.title }}</div>
+    <h1 class="h3 mb-0">Statement {{ st.reference }}</h1>
+    <div>{{ st.get_statement_type_display }} statement of <a href="{{ st.person.get_absolute_url }}">{{ st.person.full_name }}</a></div>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    {% if can_edit %}
+      <a class="btn btn-outline-primary" href="{% url 'statement_edit' st.pk %}">Edit draft</a>
+      <a class="btn btn-success" href="{% url 'statement_sign' st.pk %}">Read over &amp; sign</a>
+    {% endif %}
+    {% if st.is_locked and can_record and party %}
+      <a class="btn btn-outline-secondary" href="{% url 'statement_create' st.case.pk %}?party={{ party.pk }}&parent={{ st.pk }}">+ Additional statement</a>
+    {% endif %}
+    <a class="btn btn-outline-dark" href="{% url 'statement_print' st.pk %}" target="_blank">Print / PDF</a>
+  </div>
+</div>
+
+{% if st.is_locked %}
+  <div class="card p-3 mb-3 lock-banner">
+    <strong>Signed &amp; locked</strong> on {{ st.finalized_at|date:"d M Y H:i" }} by {{ st.finalized_by.display_name }}.
+    {% if integrity_ok %}<span class="text-success">✔ Integrity verified – record unchanged since signing.</span>
+    {% else %}<span class="text-danger fw-bold">✖ INTEGRITY CHECK FAILED – this record differs from what was signed. Report to the Station Commander immediately.</span>{% endif %}
+    <div class="small text-muted text-break">SHA-256: {{ st.content_hash }}</div>
+  </div>
+{% else %}
+  <div class="card p-3 mb-3 draft-banner">
+    <strong>Draft – not yet signed.</strong>
+    {% if problems %}<ul class="small mb-0 mt-1">{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card p-4">
+      {% if st.caution_administered %}<div class="alert alert-light border small"><strong>Caution administered:</strong> “{{ st.caution_text }}”</div>{% endif %}
+      <div class="statement-text">{{ st.body }}</div>
+      {% if st.declaration_text %}<hr><p class="fst-italic small mb-0">{{ st.declaration_text }}</p>{% endif %}
+    </div>
+    {% if st.additional_statements.exists %}
+    <div class="card p-3 mt-3"><h2 class="h6">Additional statements</h2>
+      {% for a in st.additional_statements.all %}<div><a href="{{ a.get_absolute_url }}">{{ a.reference }}</a> – {{ a.started_at|date:"d M Y" }} <span class="badge text-bg-{{ a.status|status_class }}">{{ a.get_status_display }}</span></div>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <div class="col-lg-4">
+    <div class="card p-3 mb-3"><dl class="row small mb-0">
+      {% if st.parent %}<dt class="col-5">Adds to</dt><dd class="col-7"><a href="{{ st.parent.get_absolute_url }}">{{ st.parent.reference }}</a></dd>{% endif %}
+      <dt class="col-5">Language</dt><dd class="col-7">{{ st.language }}</dd>
+      <dt class="col-5">Interpreter</dt><dd class="col-7">{{ st.interpreter_name|default:"None" }}</dd>
+      <dt class="col-5">Place</dt><dd class="col-7">{{ st.place_recorded|default:"—" }}</dd>
+      <dt class="col-5">Started</dt><dd class="col-7">{{ st.started_at|date:"d M Y H:i" }}</dd>
+      <dt class="col-5">Ended</dt><dd class="col-7">{{ st.ended_at|date:"d M Y H:i"|default:"—" }}</dd>
+      <dt class="col-5">Recorded by</dt><dd class="col-7">{{ st.recorded_by }}</dd>
+    </dl></div>
+    {% if st.is_locked %}
+    <div class="card p-3"><h2 class="h6">Signatures</h2>
+      <div class="small text-muted">Person giving statement</div>
+      {% if st.deponent_signature %}<img class="sig-img mb-2" src="{{ st.deponent_signature }}" alt="Signature">{% else %}<div class="mb-2">Refused to sign: {{ st.refusal_reason }}</div>{% endif %}
+      <div class="small text-muted">Recording officer</div><img class="sig-img mb-2" src="{{ st.officer_signature }}" alt="Signature">
+      {% if st.interpreter_signature %}<div class="small text-muted">Interpreter ({{ st.interpreter_name }})</div><img class="sig-img mb-2" src="{{ st.interpreter_signature }}" alt="Signature">{% endif %}
+      {% if st.independent_witness_signature %}<div class="small text-muted">Independent witness ({{ st.independent_witness_name }})</div><img class="sig-img" src="{{ st.independent_witness_signature }}" alt="Signature">{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

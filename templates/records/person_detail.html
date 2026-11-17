@@ -1,0 +1,33 @@
+{% extends "base.html" %}{% load records_tags %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">{{ person.full_name }}</h1>
+  {% if can_edit %}<a class="btn btn-outline-primary" href="{% url 'person_edit' person.pk %}">Edit details</a>{% endif %}
+</div>
+<div class="row g-4">
+  <div class="col-lg-5"><div class="card p-3"><dl class="row mb-0 small">
+    <dt class="col-5">Gender</dt><dd class="col-7">{{ person.get_gender_display }}</dd>
+    <dt class="col-5">Date of birth</dt><dd class="col-7">{{ person.date_of_birth|date:"d M Y"|default:"—" }}{% if person.age is not None %} ({{ person.age }} yrs){% endif %}</dd>
+    <dt class="col-5">Nationality</dt><dd class="col-7">{{ person.nationality|default:"—" }}</dd>
+    <dt class="col-5">ID</dt><dd class="col-7">{{ person.get_id_type_display }} {{ person.id_number }}</dd>
+    <dt class="col-5">Phone</dt><dd class="col-7">{{ person.phone|default:"—" }}</dd>
+    <dt class="col-5">Email</dt><dd class="col-7">{{ person.email|default:"—" }}</dd>
+    <dt class="col-5">Address</dt><dd class="col-7">{{ person.residential_address|default:"—"|linebreaksbr }}</dd>
+    <dt class="col-5">Hometown</dt><dd class="col-7">{{ person.hometown|default:"—" }}</dd>
+    <dt class="col-5">Occupation</dt><dd class="col-7">{{ person.occupation|default:"—" }}</dd>
+    <dt class="col-5">Education</dt><dd class="col-7">{{ person.education_level|default:"—" }}</dd>
+    <dt class="col-5">Registered</dt><dd class="col-7">{{ person.created_at|date:"d M Y" }} by {{ person.created_by }}</dd>
+  </dl></div></div>
+  <div class="col-lg-7">
+    <div class="card p-3 mb-3"><h2 class="h6">Cases you can see</h2>
+      {% for l in links %}<div><a href="{{ l.case.get_absolute_url }}">{{ l.case.case_number }}</a> – {{ l.case.title }} <span class="badge text-bg-light">{{ l.get_role_display }}</span></div>
+      {% empty %}<p class="text-muted small mb-0">None.</p>{% endfor %}
+      {% if other_cases_count %}<p class="small text-warning-emphasis mt-2 mb-0">This person is linked to {{ other_cases_count }} other case(s) you do not have access to.</p>{% endif %}
+    </div>
+    <div class="card p-3"><h2 class="h6">Statements</h2>
+      {% for st in statements %}<div><a href="{{ st.get_absolute_url }}">{{ st.reference }}</a> – {{ st.get_statement_type_display }} <span class="badge text-bg-{{ st.status|status_class }}">{{ st.get_status_display }}</span></div>
+      {% empty %}<p class="text-muted small mb-0">None.</p>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

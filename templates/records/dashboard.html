@@ -1,0 +1,43 @@
+{% extends "base.html" %}{% load records_tags %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div><h1 class="h3 mb-0">Dashboard</h1><div class="text-muted">{{ user.station }}</div></div>
+  {% if can_create_case %}<a class="btn btn-primary" href="{% url 'case_create' %}">+ Open new case</a>{% endif %}
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg"><div class="card stat-card p-3"><div class="text-muted small">All cases</div><div class="display-6">{{ total_cases }}</div></div></div>
+  {% for status, n in status_cards %}
+  <div class="col-6 col-lg"><a class="text-decoration-none text-reset" href="{% url 'case_list' %}?status={{ status.value }}">
+    <div class="card stat-card p-3"><div class="text-muted small">{{ status.label }}</div><div class="display-6">{{ n }}</div></div></a></div>
+  {% endfor %}
+  <div class="col-6 col-lg"><div class="card stat-card p-3"><div class="text-muted small">Statements today</div><div class="display-6">{{ today_statements }}</div></div></div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card p-3 h-100"><h2 class="h6">My draft statements (need signing)</h2>
+      {% for st in my_drafts %}
+        <a class="d-block py-1" href="{{ st.get_absolute_url }}">{{ st.reference }} – {{ st.person }}</a>
+      {% empty %}<p class="text-muted small mb-0">No unsigned drafts.</p>{% endfor %}
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card p-3 h-100"><h2 class="h6">Cases assigned to me</h2>
+      {% for c in my_cases %}
+        <a class="d-block py-1" href="{{ c.get_absolute_url }}">{{ c.case_number }} – {{ c.title }}</a>
+      {% empty %}<p class="text-muted small mb-0">No open cases assigned to you.</p>{% endfor %}
+    </div>
+  </div>
+  <div class="col-12">
+    <div class="card p-3"><h2 class="h6">Recent cases</h2>
+      <div class="table-responsive"><table class="table table-sm mb-0">
+        <thead><tr><th>Case no.</th><th>Title</th><th>Status</th><th>Assigned to</th><th>Opened</th></tr></thead>
+        <tbody>{% for c in recent_cases %}
+          <tr><td><a href="{{ c.get_absolute_url }}">{{ c.case_number }}</a></td><td>{{ c.title }}</td>
+          <td><span class="badge text-bg-{{ c.status|status_class }}">{{ c.get_status_display }}</span></td>
+          <td>{{ c.assigned_to|default:"—" }}</td><td>{{ c.created_at|date:"d M Y H:i" }}</td></tr>
+        {% empty %}<tr><td colspan="5" class="text-muted">No cases yet.</td></tr>{% endfor %}</tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Sign in · {{ SYSTEM_NAME }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-5 col-lg-4">
+    <div class="card p-4">
+      <h1 class="h4 text-center mb-1">{{ SYSTEM_NAME }}</h1>
+      <p class="text-center text-muted small mb-4">Authorised personnel only</p>
+      {% if form.errors %}<div class="alert alert-danger small">Incorrect username or password. Accounts lock after repeated failures.</div>{% endif %}
+      <form method="post">{% csrf_token %}
+        <div class="mb-3"><label class="form-label" for="id_username">Username</label>
+          <input class="form-control" name="username" id="id_username" autocomplete="username" required autofocus></div>
+        <div class="mb-3"><label class="form-label" for="id_password">Password</label>
+          <input class="form-control" type="password" name="password" id="id_password" autocomplete="current-password" required></div>
+        <input type="hidden" name="next" value="{{ next }}">
+        <button class="btn btn-primary w-100">Sign in</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

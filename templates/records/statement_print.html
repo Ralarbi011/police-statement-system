@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ st.reference }} – Statement</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm; }
+  body { font-family: Georgia, "Times New Roman", serif; color: #000; font-size: 12pt; margin: 0 auto; max-width: 180mm; }
+  .toolbar { font-family: system-ui, sans-serif; background: #f1f3f6; padding: 10px; margin-bottom: 16px; text-align: right; }
+  .toolbar button { font-size: 14px; padding: 6px 14px; }
+  h1 { text-align: center; font-size: 16pt; letter-spacing: 2px; margin: 0 0 4px; }
+  .sub { text-align: center; margin: 0 0 14px; }
+  table.meta { width: 100%; border-collapse: collapse; font-size: 10.5pt; margin-bottom: 12px; }
+  table.meta td { border: 1px solid #555; padding: 4px 6px; vertical-align: top; }
+  table.meta td.k { width: 26%; font-weight: bold; background: #f3f3f3; }
+  .caution { border: 1px solid #000; padding: 8px; font-size: 10.5pt; margin: 10px 0; }
+  .body { white-space: pre-wrap; line-height: 1.7; text-align: justify; }
+  .decl { font-style: italic; margin-top: 14px; }
+  .sigs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; page-break-inside: avoid; }
+  .sig { border-top: 1px solid #000; padding-top: 4px; font-size: 10pt; }
+  .sig img { height: 60px; display: block; }
+  .draft { color: #b00; border: 3px solid #b00; text-align: center; font-weight: bold; padding: 6px; margin-bottom: 10px; font-family: sans-serif; }
+  .foot { margin-top: 22px; font-size: 8.5pt; color: #333; border-top: 1px solid #999; padding-top: 6px; word-break: break-all; font-family: sans-serif; }
+  @media print { .toolbar { display: none; } }
+</style>
+</head>
+<body>
+<div class="toolbar"><button onclick="window.print()">Print / Save as PDF</button></div>
+{% if not st.is_locked %}<div class="draft">DRAFT – NOT SIGNED – NOT VALID AS A STATEMENT</div>{% endif %}
+<h1>STATEMENT</h1>
+<p class="sub">{{ st.case.station.name }}{% if st.case.station.district %}, {{ st.case.station.district }}{% endif %}{% if st.case.station.region %}, {{ st.case.station.region }}{% endif %}</p>
+<table class="meta">
+  <tr><td class="k">Case number</td><td>{{ st.case.case_number }}</td><td class="k">Statement ref.</td><td>{{ st.reference }}</td></tr>
+  <tr><td class="k">Offence</td><td colspan="3">{{ st.case.offence }}</td></tr>
+  <tr><td class="k">Statement of</td><td colspan="3">{{ st.person.full_name }} ({{ st.get_statement_type_display }})</td></tr>
+  <tr><td class="k">Gender / Age</td><td>{{ st.person.get_gender_display }}{% if st.person.age is not None %} / {{ st.person.age }} yrs{% endif %}</td><td class="k">ID</td><td>{{ st.person.get_id_type_display }} {{ st.person.id_number }}</td></tr>
+  <tr><td class="k">Occupation</td><td>{{ st.person.occupation|default:"—" }}</td><td class="k">Phone</td><td>{{ st.person.phone|default:"—" }}</td></tr>
+  <tr><td class="k">Address</td><td colspan="3">{{ st.person.residential_address|default:"—" }}</td></tr>
+  <tr><td class="k">Language</td><td>{{ st.language }}</td><td class="k">Interpreter</td><td>{{ st.interpreter_name|default:"None" }}</td></tr>
+  <tr><td class="k">Started</td><td>{{ st.started_at|date:"d M Y H:i" }}</td><td class="k">Ended</td><td>{{ st.ended_at|date:"d M Y H:i"|default:"—" }}</td></tr>
+  <tr><td class="k">Place</td><td>{{ st.place_recorded }}</td><td class="k">Recorded by</td><td>{{ st.recorded_by }}</td></tr>
+  {% if st.parent %}<tr><td class="k">Additional to</td><td colspan="3">{{ st.parent.reference }}</td></tr>{% endif %}
+</table>
+{% if st.caution_administered %}<div class="caution"><strong>CAUTION:</strong> {{ st.caution_text }}</div>{% endif %}
+<div class="body">{{ st.body }}</div>
+<p class="decl">{{ st.declaration_text }}</p>
+<div class="sigs">
+  <div class="sig">{% if st.deponent_signature %}<img src="{{ st.deponent_signature }}" alt="">{% else %}<div style="height:60px">Refused to sign: {{ st.refusal_reason }}</div>{% endif %}Signature of {{ st.person.full_name }}</div>
+  <div class="sig">{% if st.officer_signature %}<img src="{{ st.officer_signature }}" alt="">{% else %}<div style="height:60px"></div>{% endif %}Recording officer: {{ st.recorded_by }}</div>
+  {% if st.interpreter_name %}<div class="sig">{% if st.interpreter_signature %}<img src="{{ st.interpreter_signature }}" alt="">{% else %}<div style="height:60px"></div>{% endif %}Interpreter: {{ st.interpreter_name }}</div>{% endif %}
+  {% if st.independent_witness_name %}<div class="sig">{% if st.independent_witness_signature %}<img src="{{ st.independent_witness_signature }}" alt="">{% else %}<div style="height:60px"></div>{% endif %}Independent witness: {{ st.independent_witness_name }}</div>{% endif %}
+</div>
+<div class="foot">
+  {% if st.is_locked %}Signed &amp; locked {{ st.finalized_at|date:"d M Y H:i" }} by {{ st.finalized_by }}.
+  Integrity: {% if integrity_ok %}VERIFIED{% else %}FAILED{% endif %}. SHA-256 {{ st.content_hash }}<br>{% endif %}
+  Printed {{ printed_at|date:"d M Y H:i" }} by {{ user }}. This print-out is recorded in the system audit log.
+</div>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-7"><div class="card p-4">
+  <h1 class="h4 mb-3">Upload file to {{ case.case_number }}</h1>
+  <p class="small text-muted">Uploaded files cannot be changed or deleted. A SHA-256 fingerprint is recorded so any tampering can be detected.</p>
+  <form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+    {% include "includes/form_fields.html" %}
+    <button class="btn btn-primary">Upload</button>
+    <a class="btn btn-link" href="{{ case.get_absolute_url }}">Cancel</a>
+  </form>
+</div></div></div>
+{% endblock %}

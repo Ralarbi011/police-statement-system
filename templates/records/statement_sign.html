@@ -1,0 +1,51 @@
+{% extends "base.html" %}{% load static %}
+{% block content %}
+<h1 class="h4">Read over &amp; sign – {{ st.reference }}</h1>
+<p class="text-muted">Read the statement aloud to <strong>{{ st.person.full_name }}</strong>{% if st.interpreter_name %} (through the interpreter, {{ st.interpreter_name }}){% endif %} in {{ st.language }}. If they want changes, go back and <a href="{% url 'statement_edit' st.pk %}">edit the draft</a> first.</p>
+
+<div class="card p-4 mb-4">
+  {% if st.caution_administered %}<div class="alert alert-light border small"><strong>Caution administered:</strong> “{{ st.caution_text }}”</div>{% endif %}
+  <div class="statement-text">{{ st.body }}</div>
+  <hr><p class="fst-italic mb-0">{{ st.declaration_text }}</p>
+</div>
+
+<form method="post" id="sign-form">{% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger"><ul class="mb-0">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+  {% for f in form.hidden_fields %}{{ f }}{% endfor %}
+  <div class="row g-4">
+    <div class="col-md-6"><div class="card p-3">
+      <label class="fw-semibold mb-1">Signature of {{ st.person.full_name }}</label>
+      <div class="sig-pad-wrap" data-target="{{ form.deponent_signature.id_for_label }}"><canvas></canvas></div>
+      <button class="btn btn-sm btn-link px-0" data-clear="{{ form.deponent_signature.id_for_label }}">Clear</button>
+      <div class="form-check mt-2">{{ form.deponent_refused_to_sign }} <label class="form-check-label" for="{{ form.deponent_refused_to_sign.id_for_label }}">{{ form.deponent_refused_to_sign.label }}</label></div>
+      <input type="text" name="refusal_reason" class="form-control form-control-sm mt-1" placeholder="Reason given for refusing" value="{{ form.refusal_reason.value|default:'' }}">
+    </div></div>
+    <div class="col-md-6"><div class="card p-3">
+      <label class="fw-semibold mb-1">Signature of recording officer ({{ user.display_name }})</label>
+      <div class="sig-pad-wrap" data-target="{{ form.officer_signature.id_for_label }}"><canvas></canvas></div>
+      <button class="btn btn-sm btn-link px-0" data-clear="{{ form.officer_signature.id_for_label }}">Clear</button>
+    </div></div>
+    {% if st.interpreter_name %}
+    <div class="col-md-6"><div class="card p-3">
+      <label class="fw-semibold mb-1">Signature of interpreter ({{ st.interpreter_name }})</label>
+      <div class="sig-pad-wrap" data-target="{{ form.interpreter_signature.id_for_label }}"><canvas></canvas></div>
+      <button class="btn btn-sm btn-link px-0" data-clear="{{ form.interpreter_signature.id_for_label }}">Clear</button>
+    </div></div>
+    {% endif %}
+    <div class="col-md-6"><div class="card p-3">
+      <label class="fw-semibold mb-1">Independent witness <span class="text-muted fw-normal">(required if the person refuses to sign)</span></label>
+      <input type="text" name="independent_witness_name" class="form-control form-control-sm mb-2" placeholder="Witness full name" value="{{ form.independent_witness_name.value|default:'' }}">
+      <div class="sig-pad-wrap" data-target="{{ form.independent_witness_signature.id_for_label }}"><canvas></canvas></div>
+      <button class="btn btn-sm btn-link px-0" data-clear="{{ form.independent_witness_signature.id_for_label }}">Clear</button>
+    </div></div>
+  </div>
+  <div class="card p-3 mt-4 draft-banner">
+    <div class="form-check">{{ form.confirm_read_over }} <label class="form-check-label" for="{{ form.confirm_read_over.id_for_label }}">{{ form.confirm_read_over.label }}</label></div>
+    {% for e in form.confirm_read_over.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    <p class="small text-danger mb-2 mt-2">Once you sign and lock, this statement can never be edited or deleted.</p>
+    <div><button class="btn btn-success">Sign &amp; lock statement</button>
+    <a class="btn btn-link" href="{{ st.get_absolute_url }}">Cancel</a></div>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/signature.js' %}"></script>{% endblock %}

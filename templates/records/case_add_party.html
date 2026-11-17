@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h4 mb-1">Add person to {{ case.case_number }}</h1>
+<p class="text-muted">Search first. Only register a new person if they are not already in the system.</p>
+<form class="card p-3 mb-3" method="get">
+  <div class="input-group"><input class="form-control" name="q" value="{{ q }}" placeholder="Name, ID number or phone" autofocus>
+  <button class="btn btn-outline-primary">Search</button></div>
+</form>
+{% if q %}
+<div class="card mb-3"><div class="table-responsive"><table class="table mb-0">
+  <thead><tr><th>Name</th><th>ID</th><th>Date of birth</th><th>Add as</th></tr></thead>
+  <tbody>{% for p in results %}
+    <tr><td><a href="{{ p.get_absolute_url }}" target="_blank">{{ p.full_name }}</a></td>
+    <td>{{ p.get_id_type_display }} {{ p.id_number }}</td><td>{{ p.date_of_birth|date:"d M Y"|default:"—" }}</td>
+    <td><form method="post" class="d-flex gap-2">{% csrf_token %}<input type="hidden" name="person" value="{{ p.pk }}">
+      <select name="role" class="form-select form-select-sm">{% for v, l in party_roles %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select>
+      <button class="btn btn-sm btn-primary">Add</button></form></td></tr>
+  {% empty %}<tr><td colspan="4" class="text-muted">No match found.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endif %}
+<div class="card p-3">
+  <form method="get" action="{% url 'person_create' %}" class="row g-2 align-items-center">
+    <input type="hidden" name="case" value="{{ case.pk }}">
+    <div class="col-auto">Not found? Register a new</div>
+    <div class="col-auto"><select name="role" class="form-select">{% for v, l in party_roles %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+    <div class="col-auto"><button class="btn btn-success">Register new person</button></div>
+  </form>
+</div>
+<a class="btn btn-link mt-3" href="{{ case.get_absolute_url }}">← Back to case</a>
+{% endblock %}
